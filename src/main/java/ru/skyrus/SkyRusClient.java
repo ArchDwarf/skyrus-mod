@@ -2,7 +2,7 @@ package ru.skyrus;
 
 import com.mojang.brigadier.arguments.StringArgumentType;
 import net.fabricmc.api.ClientModInitializer;
-import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
@@ -88,7 +88,7 @@ public final class SkyRusClient implements ClientModInitializer {
 
     private void registerCommands() {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> dispatcher.register(
-                ClientCommandManager.literal("skyrus")
+                ClientCommands.literal("skyrus")
                         .executes(ctx -> {
                             var c = SkyRus.config;
                             msg(ctx.getSource(), "Перевод: " + onOff(c.enabled)
@@ -101,28 +101,28 @@ public final class SkyRusClient implements ClientModInitializer {
                                     + " | everywhere | reload | clearcache");
                             return 1;
                         })
-                        .then(ClientCommandManager.literal("toggle").executes(ctx -> {
+                        .then(ClientCommands.literal("toggle").executes(ctx -> {
                             SkyRus.config.enabled = !SkyRus.config.enabled;
                             save();
                             if (!SkyRus.config.enabled) ChatQueue.flush(ctx.getSource().getClient());
                             msg(ctx.getSource(), "Перевод " + onOff(SkyRus.config.enabled));
                             return 1;
                         }))
-                        .then(ClientCommandManager.literal("auto").executes(ctx -> {
+                        .then(ClientCommands.literal("auto").executes(ctx -> {
                             SkyRus.config.machineTranslation = !SkyRus.config.machineTranslation;
                             save();
                             SkyRus.applyMachineSetting();
                             msg(ctx.getSource(), "Автоматический перевод " + onOff(SkyRus.config.machineTranslation));
                             return 1;
                         }))
-                        .then(ClientCommandManager.literal("everywhere").executes(ctx -> {
+                        .then(ClientCommands.literal("everywhere").executes(ctx -> {
                             SkyRus.config.onlyOnHypixel = !SkyRus.config.onlyOnHypixel;
                             save();
                             msg(ctx.getSource(), "Только на Hypixel: " + onOff(SkyRus.config.onlyOnHypixel));
                             return 1;
                         }))
-                        .then(ClientCommandManager.literal("provider")
-                                .then(ClientCommandManager.argument("name", StringArgumentType.word()).executes(ctx -> {
+                        .then(ClientCommands.literal("provider")
+                                .then(ClientCommands.argument("name", StringArgumentType.word()).executes(ctx -> {
                                     String p = StringArgumentType.getString(ctx, "name").toLowerCase();
                                     if (!p.matches("google|deepl|libretranslate|none")) {
                                         msg(ctx.getSource(), "§cНеизвестный переводчик: " + p);
@@ -134,8 +134,8 @@ public final class SkyRusClient implements ClientModInitializer {
                                     msg(ctx.getSource(), "Переводчик: " + p);
                                     return 1;
                                 })))
-                        .then(ClientCommandManager.literal("key")
-                                .then(ClientCommandManager.argument("key", StringArgumentType.greedyString()).executes(ctx -> {
+                        .then(ClientCommands.literal("key")
+                                .then(ClientCommands.argument("key", StringArgumentType.greedyString()).executes(ctx -> {
                                     SkyRus.config.deeplKey = StringArgumentType.getString(ctx, "key").trim();
                                     SkyRus.config.provider = "deepl";
                                     save();
@@ -143,8 +143,8 @@ public final class SkyRusClient implements ClientModInitializer {
                                     msg(ctx.getSource(), "Ключ DeepL сохранён, переводчик: deepl");
                                     return 1;
                                 })))
-                        .then(ClientCommandManager.literal("part")
-                                .then(ClientCommandManager.argument("part", StringArgumentType.word()).executes(ctx -> {
+                        .then(ClientCommands.literal("part")
+                                .then(ClientCommands.argument("part", StringArgumentType.word()).executes(ctx -> {
                                     String part = StringArgumentType.getString(ctx, "part").toLowerCase();
                                     Boolean v = togglePart(part);
                                     if (v == null) {
@@ -155,12 +155,12 @@ public final class SkyRusClient implements ClientModInitializer {
                                     msg(ctx.getSource(), part + ": " + onOff(v));
                                     return 1;
                                 })))
-                        .then(ClientCommandManager.literal("reload").executes(ctx -> {
+                        .then(ClientCommands.literal("reload").executes(ctx -> {
                             SkyRus.reloadDictionary();
                             msg(ctx.getSource(), "Словарь перезагружен: " + SkyRus.DICTIONARY.size() + " записей");
                             return 1;
                         }))
-                        .then(ClientCommandManager.literal("clearcache").executes(ctx -> {
+                        .then(ClientCommands.literal("clearcache").executes(ctx -> {
                             SkyRus.machine.clearCache();
                             SkyRus.clearCaches();
                             msg(ctx.getSource(), "Кэш автоперевода очищен");

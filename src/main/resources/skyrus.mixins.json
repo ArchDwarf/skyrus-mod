@@ -6,7 +6,7 @@
   "client": [
     "BossEventMixin",
     "EntityMixin",
-    "GuiMixin",
+    "HudMixin",
     "PlayerTabOverlayMixin",
     "PlayerTeamMixin",
     "ScreenAccessor"

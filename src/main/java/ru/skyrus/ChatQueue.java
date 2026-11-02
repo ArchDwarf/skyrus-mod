@@ -35,14 +35,14 @@ public final class ChatQueue {
             if (!ready && now < e.deadline()) break;
             QUEUE.pollFirst();
             Component out = SkyRus.translate(e.original(), true).component();
-            if (mc.gui != null) mc.gui.getChat().addMessage(out);
+            if (mc.gui != null) mc.gui.hud.getChat().addClientSystemMessage(out);
         }
     }
 
     public static void flush(Minecraft mc) {
         while (!QUEUE.isEmpty()) {
             Entry e = QUEUE.pollFirst();
-            if (mc.gui != null) mc.gui.getChat().addMessage(SkyRus.translate(e.original(), false).component());
+            if (mc.gui != null) mc.gui.hud.getChat().addClientSystemMessage(SkyRus.translate(e.original(), false).component());
         }
     }
 }
