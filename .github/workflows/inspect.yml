@@ -12,17 +12,13 @@ jobs:
       - name: inspect
         run: |
           set +e
-          echo "=== command jars ==="
-          for j in $(find ~/.gradle /home/runner -name '*command*.jar' 2>/dev/null | sort -u); do echo "## $j"; unzip -l "$j" | grep -i '\.class' | grep -iv '\$' | awk '{print $4}' | grep -i 'api'; done
-          MC=$(find ~/.gradle /home/runner -name 'minecraft-*.jar' -path '*26.2*' 2>/dev/null | grep -v sources | head -20)
-          echo "=== mc jars ==="; echo "$MC"
-          for j in $MC; do
-            if unzip -l "$j" | grep -q 'net/minecraft/client/gui/Gui.class'; then
-              echo "### Gui in $j"
-              javap -cp "$j" net.minecraft.client.gui.Gui | grep -iE 'chat|title|overlay'
-              javap -cp "$j" net.minecraft.client.Minecraft | grep -iE 'chat|gui |hud'
-              unzip -l "$j" | grep -iE 'ChatComponent|gui/hud|components/Chat' | awk '{print $4}' | head -20
-              for c in net.minecraft.client.gui.components.PlayerTabOverlay net.minecraft.world.scores.PlayerTeam net.minecraft.client.gui.screens.Screen net.minecraft.world.BossEvent net.minecraft.client.multiplayer.ServerData; do echo "-- $c"; javap -p -cp "$j" $c | grep -iE 'title|getNameForDisplay|setHeader|setFooter|formatNameForTeam|getName\(|ip;|String ip'; done
-              javap -cp "$j" net.minecraft.world.entity.Entity | grep -i customname
-            fi
-          done
+          J=~/.gradle/caches/fabric-loom/26.2/minecraft-client.jar
+          C=$(find ~/.gradle -name 'fabric-command-api-v2*.jar' | grep -v sources | head -1)
+          echo "=== Hud ==="; javap -cp $J net.minecraft.client.gui.Hud | grep -iE 'chat|title|overlay|Hud\('
+          echo "=== Gui ==="; javap -p -cp $J net.minecraft.client.gui.Gui | grep -iE 'hud|chat|Gui\('
+          echo "=== ChatComponent ==="; javap -cp $J net.minecraft.client.gui.components.ChatComponent | grep -iE 'addMessage|addClientSystem'
+          echo "=== ClientCommands ==="; javap -cp $C net.fabricmc.fabric.api.client.command.v2.ClientCommands
+          echo "=== Source ==="; javap -cp $C net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource | grep -iE 'feedback|client|Minecraft'
+          echo "=== Callback ==="; javap -cp $C 'net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback'
+          echo "=== GameProfile ==="; G=$(find ~/.gradle -name 'authlib*.jar' | grep -v sources | head -1); javap -cp $G com.mojang.authlib.GameProfile | grep -iE 'name'
+          echo "=== Minecraft getCurrentServer ==="; javap -cp $J net.minecraft.client.Minecraft | grep -iE 'getCurrentServer|getConnection'
