@@ -1,0 +1,17 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "ru.skyrus.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "client": [
+    "BossEventMixin",
+    "EntityMixin",
+    "GuiMixin",
+    "PlayerTabOverlayMixin",
+    "PlayerTeamMixin",
+    "ScreenAccessor"
+  ],
+  "injectors": {
+    "defaultRequire": 0
+  }
+}

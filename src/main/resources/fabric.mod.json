@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "skyrus",
+  "version": "${version}",
+  "name": "SkyRus",
+  "description": "Русификатор Hypixel SkyBlock: словарь терминов + автоматический машинный перевод чата, предметов, меню, табло, таба и заголовков.",
+  "authors": ["kireenko602"],
+  "license": "MIT",
+  "environment": "client",
+  "entrypoints": {
+    "client": ["ru.skyrus.SkyRusClient"]
+  },
+  "mixins": ["skyrus.mixins.json"],
+  "depends": {
+    "fabricloader": ">=0.19.0",
+    "minecraft": "~26.2",
+    "fabric-api": "*",
+    "java": ">=25"
+  }
+}
