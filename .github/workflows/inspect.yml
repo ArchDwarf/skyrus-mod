@@ -1,0 +1,28 @@
+name: inspect
+on: { push: { branches: [inspect] } }
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 25 }
+      - uses: gradle/actions/setup-gradle@v4
+      - run: chmod +x gradlew && ./gradlew compileJava --no-daemon || true
+      - name: inspect
+        run: |
+          set +e
+          echo "=== command jars ==="
+          for j in $(find ~/.gradle /home/runner -name '*command*.jar' 2>/dev/null | sort -u); do echo "## $j"; unzip -l "$j" | grep -i '\.class' | grep -iv '\$' | awk '{print $4}' | grep -i 'api'; done
+          MC=$(find ~/.gradle /home/runner -name 'minecraft-*.jar' -path '*26.2*' 2>/dev/null | grep -v sources | head -20)
+          echo "=== mc jars ==="; echo "$MC"
+          for j in $MC; do
+            if unzip -l "$j" | grep -q 'net/minecraft/client/gui/Gui.class'; then
+              echo "### Gui in $j"
+              javap -cp "$j" net.minecraft.client.gui.Gui | grep -iE 'chat|title|overlay'
+              javap -cp "$j" net.minecraft.client.Minecraft | grep -iE 'chat|gui |hud'
+              unzip -l "$j" | grep -iE 'ChatComponent|gui/hud|components/Chat' | awk '{print $4}' | head -20
+              for c in net.minecraft.client.gui.components.PlayerTabOverlay net.minecraft.world.scores.PlayerTeam net.minecraft.client.gui.screens.Screen net.minecraft.world.BossEvent net.minecraft.client.multiplayer.ServerData; do echo "-- $c"; javap -p -cp "$j" $c | grep -iE 'title|getNameForDisplay|setHeader|setFooter|formatNameForTeam|getName\(|ip;|String ip'; done
+              javap -cp "$j" net.minecraft.world.entity.Entity | grep -i customname
+            fi
+          done
