@@ -125,6 +125,41 @@ def translate_many(texts):
     return result
 
 
+CYR_TO_LAT_ROMAN = str.maketrans({"Х": "X", "І": "I", "С": "C", "М": "M"})
+ROMAN_LIKE = re.compile(r"(?<![\w])[IVXLCMХІСМ]+(?![\w])")
+ROMAN_SRC = re.compile(r"(?<![\w])[IVXLCM]+(?![\w])")
+
+
+def postprocess(source, tr):
+    # Римские цифры, которые Google написал кириллицей («Уровень Х» -> «Уровень X»)
+    src_romans = set(ROMAN_SRC.findall(source))
+    if src_romans:
+        def fix(m):
+            lat = m.group().translate(CYR_TO_LAT_ROMAN)
+            return lat if lat in src_romans else m.group()
+        tr = ROMAN_LIKE.sub(fix, tr)
+    # Заглавная буква, как в оригинале
+    s0 = next((c for c in source if c.isalpha()), "")
+    t_idx = next((i for i, c in enumerate(tr) if c.isalpha()), None)
+    if s0.isupper() and t_idx is not None and tr[t_idx].islower():
+        tr = tr[:t_idx] + tr[t_idx].upper() + tr[t_idx + 1:]
+    return tr
+
+
+def load_dictionary_names(path):
+    """Названия из встроенного словаря мода главнее машинного перевода (единые термины)."""
+    if not os.path.exists(path):
+        return {}
+    with open(path, encoding="utf-8") as f:
+        d = json.load(f)
+    res = {}
+    for section in ("terms", "exact"):
+        for k, v in d.get(section, {}).items():
+            if v and v[:1].isalpha() and not k.isupper() and "(" not in v:
+                res[k.strip().lower()] = v
+    return res
+
+
 def main(extracted_path, out_path):
     with open(extracted_path, encoding="utf-8") as f:
         src = json.load(f)
@@ -157,6 +192,19 @@ def main(extracted_path, out_path):
                 continue
             out[section][key] = tpl
         print(f"{section}: не удалось сопоставить числа в {bad} строках (их переведёт автоперевод в игре)", flush=True)
+
+    # Исправления поверх машинного перевода (применяются ко всем строкам при каждом запуске)
+    overrides = load_dictionary_names(os.path.join(os.path.dirname(out_path), "dictionary.json"))
+    for section in ("names", "texts"):
+        for key in list(out[section]):
+            source = src[section].get(key)
+            if source is None:          # предмет удалён из игры
+                del out[section][key]
+                continue
+            fixed = postprocess(source, out[section][key])
+            if section == "names" and key.lower() in overrides and "{" not in key:
+                fixed = overrides[key.lower()]
+            out[section][key] = fixed
 
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
     with open(out_path, "w", encoding="utf-8") as f:
