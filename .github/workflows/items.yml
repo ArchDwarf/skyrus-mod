@@ -1,0 +1,63 @@
+name: Перевод предметов SkyBlock
+
+# Скачивает описания всех предметов из NotEnoughUpdates-REPO, переводит новые на русский,
+# сохраняет в src/main/resources/assets/skyrus/items_ru.json и собирает мод.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 4 * * 1"   # каждый понедельник — подтянуть новые предметы
+  push:
+    branches: [main]
+    paths:
+      - "tools/**"
+      - ".github/workflows/items.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: items
+  cancel-in-progress: false
+
+jobs:
+  translate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Скачать NotEnoughUpdates-REPO
+        run: git clone --depth 1 https://github.com/NotEnoughUpdates/NotEnoughUpdates-REPO /tmp/neu
+
+      - name: Извлечь тексты
+        run: python3 tools/extract_items.py /tmp/neu /tmp/extracted.json
+
+      - name: Перевести
+        run: python3 tools/translate_items.py /tmp/extracted.json src/main/resources/assets/skyrus/items_ru.json
+
+      - name: Сохранить перевод в репозиторий
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/main/resources/assets/skyrus/items_ru.json
+          if git diff --cached --quiet; then
+            echo "Изменений нет"
+          else
+            git commit -m "Обновить перевод предметов SkyBlock"
+            git pull --rebase origin main
+            git push
+          fi
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 25
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Сборка мода
+        run: |
+          chmod +x gradlew
+          ./gradlew build --no-daemon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: skyrus-mod
+          path: build/libs/*.jar

@@ -97,6 +97,7 @@ public final class SkyRus {
         } catch (Exception e) {
             System.err.println("[SkyRus] Ошибка пользовательского словаря: " + e);
         }
+        ItemLore.load();
         applyMachineSetting();
         clearCaches();
     }
@@ -104,11 +105,13 @@ public final class SkyRus {
     public static void applyMachineSetting() {
         strings.setMachine(config.machineTranslation && !"none".equalsIgnoreCase(config.provider) ? machine : null);
         DONE.clear();
+        ItemLore.clearCache();
     }
 
     public static void clearCaches() {
         DONE.clear();
         strings.clearCache();
+        ItemLore.clearCache();
     }
 
     public static boolean active() {

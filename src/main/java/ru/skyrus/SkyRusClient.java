@@ -13,6 +13,7 @@ import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 import net.minecraft.network.chat.Component;
 import ru.skyrus.mixin.ScreenAccessor;
 
+import java.util.List;
 import java.util.regex.Pattern;
 
 public final class SkyRusClient implements ClientModInitializer {
@@ -42,7 +43,9 @@ public final class SkyRusClient implements ClientModInitializer {
         // --- Описания предметов (включая название предмета — это первая строка) ---
         ItemTooltipCallback.EVENT.register((stack, context, flag, lines) -> {
             if (!SkyRus.active() || !SkyRus.config.translateTooltips) return;
-            lines.replaceAll(SkyRus::tr);
+            List<Component> translated = ItemLore.translate(List.copyOf(lines));
+            lines.clear();
+            lines.addAll(translated);
         });
 
         // --- Заголовки меню (сундуков/GUI) ---
@@ -94,7 +97,8 @@ public final class SkyRusClient implements ClientModInitializer {
                             msg(ctx.getSource(), "Перевод: " + onOff(c.enabled)
                                     + "§r, автоперевод: " + onOff(c.machineTranslation) + "§r (" + c.provider + ")"
                                     + "§r, только Hypixel: " + onOff(c.onlyOnHypixel)
-                                    + "\n§7Словарь: " + SkyRus.DICTIONARY.size() + " записей, кэш автоперевода: "
+                                    + "\n§7Словарь: " + SkyRus.DICTIONARY.size() + " записей, предметы: " + ItemLore.size()
+                                    + ", кэш автоперевода: "
                                     + SkyRus.machine.cacheSize() + " строк"
                                     + "\n§7Команды: /skyrus toggle | auto | provider <google|deepl|libretranslate|none>"
                                     + " | key <ключ DeepL> | part <chat|players|actionbar|tooltips|menus|titles|sidebar|tab|bossbar|names>"
